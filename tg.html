@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Telegram Clone — Smooth & Colorful</title>
+<style>
+:root{
+  --bg-main:#0e1621;
+  --bg-sidebar:#17212b;
+  --bg-header:rgba(32,43,54,0.9);
+  --bg-msg:#1b2838;
+  --text:#e6eef6;
+  --accent:#2d9cdb;
+  --glass: rgba(255,255,255,0.03);
+}
+body.light{
+  --bg-main:#f5f7fb;
+  --bg-sidebar:#ffffff;
+  --bg-header:rgba(255,255,255,0.9);
+  --bg-msg:#edf1f7;
+  --text:#0f1720;
+  --accent:#0077cc;
+  --glass: rgba(0,0,0,0.03);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg-main); color:var(--text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+.app{display:flex;height:100vh;gap:12px;padding:12px;align-items:stretch}
+
+/* SIDEBAR */
+.sidebar{
+  width:320px;
+  max-width:38%;
+  background:linear-gradient(180deg,var(--bg-sidebar), rgba(0,0,0,0.02));
+  border-radius:12px;
+  padding:8px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.header{
+  padding:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border-radius:8px;
+  background:var(--bg-header);
+  backdrop-filter:blur(6px);
+  box-shadow: 0 2px 8px rgba(2,6,23,0.3);
+  font-weight:600;
+}
+
+.controls{display:flex;gap:8px;align-items:center;}
+.controls button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;cursor:pointer;color:var(--text);font-weight:600;transition:all .18s ease}
+.controls button:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.25)}
+
+.chats{flex:1;overflow:auto;margin-top:10px;padding-right:6px;}
+.chat{
+  display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;margin-bottom:6px;cursor:pointer;
+  transition:all .16s cubic-bezier(.2,.9,.2,1);
+}
+.chat:hover{transform:translateY(-2px);background:var(--glass)}
+.chat.active{background:linear-gradient(90deg, rgba(45,156,219,0.12), rgba(45,156,219,0.04));box-shadow: inset 0 0 0 1px rgba(45,156,219,0.06)}
+
+/* avatar */
+.avatar{
+  width:44px;height:44px;border-radius:50%;flex:0 0 44px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-transform:uppercase;color:var(--text);box-shadow:0 6px 18px rgba(2,6,23,0.45);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.chat:hover .avatar{transform:scale(1.06)}
+
+/* chat meta */
+.chat .meta{display:flex;flex-direction:column;gap:4px}
+.chat .meta .name{font-weight:600}
+.chat .meta .sub{font-size:13px;color:rgba(255,255,255,0.64)}
+
+/* bottom controls */
+.sidebar .actions{padding:8px;display:flex;gap:8px;justify-content:space-between}
+.sidebar .actions button{flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer;transition:transform .12s}
+.sidebar .actions button:active{transform:scale(.98)}
+
+/* DIALOG */
+.dialog{
+  flex:1;display:flex;flex-direction:column;min-width:320px;height:100%;
+  border-radius:12px;padding:0;overflow:hidden;box-shadow:0 8px 40px rgba(2,6,23,0.6);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+
+/* header */
+.dialog-header{
+  display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-header);backdrop-filter:blur(6px);gap:12px;
+}
+.dialog-title{display:flex;align-items:center;gap:12px;font-weight:700}
+.dialog-title .small-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(2,6,23,0.4)}
+
+/* messages area */
+.messages{
+  flex:1;overflow:auto;padding:18px;scroll-behavior:smooth;background-color:var(--bg-main);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><circle cx='30' cy='40' r='6' fill='rgba(255,255,255,0.03)'/><circle cx='110' cy='120' r='4' fill='rgba(255,255,255,0.03)'/><circle cx='160' cy='70' r='3' fill='rgba(255,255,255,0.03)'/><circle cx='60' cy='150' r='5' fill='rgba(255,255,255,0.03)'/></svg>");
+  background-size:220px 220px;
+}
+
+/* message bubble */
+.msg-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:12px}
+.msg{padding:10px 14px;border-radius:12px;background:var(--bg-msg);max-width:68%;box-shadow:0 6px 18px rgba(2,6,23,0.45);transition:transform .18s, box-shadow .18s, opacity .18s;opacity:0;transform:translateY(6px)}
+.msg.show{opacity:1;transform:none}
+.msg.me{margin-left:auto;background:var(--accent);color:white}
+.msg .mini-avatar{width:28px;height:28px;border-radius:50%;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.msg .text{white-space:pre-wrap}
+
+/* input */
+.input-box{display:flex;gap:10px;padding:12px;background:var(--bg-sidebar);align-items:center;border-top:1px solid rgba(0,0,0,0.06)}
+.input-box input{flex:1;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:var(--text);outline:none;font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);transition:all .12s}
+body.light .input-box input{background:rgba(0,0,0,0.03);color:var(--text)}
+.input-box button{padding:10px 12px;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+
+/* modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.6));backdrop-filter:blur(4px);z-index:30}
+.modal-content{background:var(--bg-sidebar);padding:20px;border-radius:12px;min-width:300px;box-shadow:0 12px 40px rgba(2,6,23,0.6);display:flex;flex-direction:column;gap:10px}
+.modal input{padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);color:var(--text);outline:none}
+.modal button{padding:10px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+
+/* scrollbar styling */
+.messages::-webkit-scrollbar, .chats::-webkit-scrollbar{width:10px;height:10px}
+.messages::-webkit-scrollbar-thumb, .chats::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:10px}
+.messages::-webkit-scrollbar-track, .chats::-webkit-scrollbar-track{background:transparent}
+
+/* responsive */
+@media (max-width:860px){
+  .app{flex-direction:column;padding:8px}
+  .sidebar{width:100%;max-height:280px;overflow:auto}
+  .dialog{height:calc(100vh - 320px)}
+}
+</style>
+</head>
+<body>
+
+<!-- register -->
+<div class="modal" id="registerModal">
+  <div class="modal-content">
+    <h2 style="margin:0">Добро пожаловать</h2>
+    <div style="color:rgba(255,255,255,0.75)">Введи имя — и врываемся в чат. Без лишней бюрократии.</div>
+    <input id="usernameInput" placeholder="Ваше имя (например: Брат)" />
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="register()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none">
+  <div class="sidebar">
+    <div class="header">
+      <div>Telegram — Smooth</div>
+      <div class="controls">
+        <button onclick="toggleTheme()" title="Тема">🌓</button>
+        <button onclick="focusSearch()" title="Найти">🔎</button>
+      </div>
+    </div>
+
+    <div class="chats" id="chatList"></div>
+
+    <div class="actions" style="margin-top:8px">
+      <button onclick="createChat('group')">➕ Группа</button>
+      <button onclick="createChat('channel')">➕ Канал</button>
+    </div>
+  </div>
+
+  <div class="dialog">
+    <div class="dialog-header">
+      <div class="dialog-title">
+        <div class="small-avatar" id="headerAvatar"></div>
+        <div>
+          <div id="chatTitle" style="font-weight:700">Чат</div>
+          <div id="chatSubtitle" style="font-size:13px;color:rgba(255,255,255,0.7)">онлайн</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="font-size:13px;color:rgba(255,255,255,0.7)">Пользователь: <span id="currentUser" style="font-weight:700"></span></div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-box">
+      <input id="input" placeholder="Написать сообщение..." onkeydown="if(event.key==='Enter')send()" />
+      <button onclick="send()">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ------------- data ------------- */
+let username = "";
+// richer default chats
+const chats = [
+  {name:"Мама", type:"chat", replies:["Как дела?","Не забудь поесть","Когда будешь дома?","Позвони позже"]},
+  {name:"Друг", type:"chat", replies:["Че, играем?","Залетаешь?","Ща буду","Пошли катку"]},
+  {name:"Работа", type:"chat", replies:["Скинь отчет","Дедлайн завтра","Нужно созвониться","Ты успеешь?"]},
+  {name:"Братан", type:"chat", replies:["Где ты?","Заходи в игру","Давай встречу","Ща буду"]},
+  {name:"Сосед", type:"chat", replies:["Привет!","Ты дома?","Слушай, срочно","Зайди к нам"]},
+  {name:"Коуч", type:"chat", replies:["Тренировка через час","Не забывай пить воду","Хорошо поработал","Следующая цель"]},
+  {name:"Партнёр", type:"chat", replies:["Отчёт готов?","Связь поддерживать","Нужна помощь","Сделаем"]},
+  {name:"Новости", type:"channel", replies:["Сегодня вышло обновление", "Читайте главное"], isChannel:true},
+  {name:"Объявления", type:"channel", replies:["Новый курс стартует завтра","Успей зарегистрироваться"], isChannel:true},
+];
+/* generate mini-history for each chat */
+const history = chats.map(chat=>{
+  const mini = [];
+  if(chat.type === "channel"){
+    mini.push({text: "Добро пожаловать в канал: " + chat.name, me:false});
+    mini.push({text: chat.replies[0] || "События дня", me:false});
+  } else {
+    // make 3 messages alternating for a realistic feel
+    for(let i=0;i<3;i++){
+      const text = chat.replies[Math.floor(Math.random()*chat.replies.length)];
+      mini.push({text, me: i%2===0});
+    }
+  }
+  return mini;
+});
+
+let currentChat = 0;
+
+/* ------------- utilities ------------- */
+/* deterministic color from string — returns HSL and text color */
+function colorFromString(str){
+  // simple hash
+  let h = 0;
+  for(let i=0;i<str.length;i++) h = (h<<5) - h + str.charCodeAt(i) | 0;
+  h = Math.abs(h);
+  const hue = h % 360;
+  const sat = 65; // pleasant saturation
+  const light = 55; // pastel-ish
+  const bg = `hsl(${hue} ${sat}% ${light}%)`;
+  // pick text color based on light
+  const text = light > 60 ? '#111' : '#fff';
+  return {bg, text};
+}
+
+/* initials */
+function getInitials(name){
+  return name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+}
+
+/* helper to create DOM nodes cleanly */
+function el(tag, props={}, ...children){
+  const e = document.createElement(tag);
+  for(const k in props) {
+    if(k === "style") Object.assign(e.style, props[k]);
+    else if(k.startsWith("on") && typeof props[k] === "function") e.addEventListener(k.slice(2), props[k]);
+    else e.setAttribute(k, props[k]);
+  }
+  for(const c of children) {
+    if(typeof c === "string") e.appendChild(document.createTextNode(c));
+    else if(c) e.appendChild(c);
+  }
+  return e;
+}
+
+/* ------------- rendering ------------- */
+function renderChats(){
+  const list = document.getElementById("chatList");
+  list.innerHTML = "";
+  chats.forEach((c,i)=>{
+    const {bg, text} = colorFromString(c.name);
+    const avatar = el("div",{class:"avatar", style:{background:bg, color:text}}, getInitials(c.name));
+    const name = el("div",{class:"name"}, c.name);
+    const sub = el("div",{class:"sub"}, c.type==="channel" ? "Канал" : "Чат");
+    const meta = el("div",{class:"meta"}, name, sub);
+    const item = el("div",{class:"chat"+(i===currentChat?" active":""), onclick:()=>switchChat(i)}, avatar, meta);
+    list.appendChild(item);
+  });
+}
+
+function renderHeader(){
+  const title = document.getElementById("chatTitle");
+  const subtitle = document.getElementById("chatSubtitle");
+  const headerAvatar = document.getElementById("headerAvatar");
+  const chat = chats[currentChat];
+  title.textContent = chat.name;
+  subtitle.textContent = chat.type === "channel" ? "Канал • подписчиков много (шутка)" : "Переписка";
+  const {bg, text} = colorFromString(chat.name);
+  headerAvatar.style.background = bg;
+  headerAvatar.style.color = text;
+  headerAvatar.textContent = getInitials(chat.name);
+}
+
+function renderMessages(){
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+  const items = history[currentChat] || [];
+  items.forEach((m, idx)=>{
+    const row = el("div",{class:"msg-row"});
+    if(m.me){
+      // my message (right)
+      const bubble = el("div",{class:"msg me show"}, el("div",{class:"text"}, m.text));
+      row.appendChild(bubble);
+    } else {
+      // incoming: add small avatar
+      const {bg, text} = colorFromString(chats[currentChat].name);
+      const mini = el("div",{class:"mini-avatar", style:{background:bg,color:text}}, getInitials(chats[currentChat].name));
+      const bubble = el("div",{class:"msg show"}, el("div",{class:"text"}, m.text));
+      row.appendChild(mini);
+      row.appendChild(bubble);
+    }
+    box.appendChild(row);
+    // slight stagger reveal
+    setTimeout(()=> {
+      const b = row.querySelector(".msg");
+      if(b) b.classList.add("show");
+    }, 40*idx);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ------------- actions ------------- */
+function switchChat(i){
+  currentChat = i;
+  renderChats();
+  renderHeader();
+  renderMessages();
+}
+
+function send(){
+  const input = document.getElementById("input");
+  const text = input.value.trim();
+  if(!text) return;
+  history[currentChat].push({text, me:true});
+  input.value = "";
+  renderMessages();
+  // bot/site reply for channels or chats
+  if(chats[currentChat].type === "channel"){
+    // channels usually don't reply, but we simulate site announcements occasionally
+    setTimeout(()=> {
+      history[currentChat].push({text: "Автоматическое сообщение канала: спасибо за подписку!", me:false});
+      renderMessages();
+    }, 900);
+  } else {
+    setTimeout(()=>{
+      const repl = chats[currentChat].replies || ["Ок","Принято","Спасибо"];
+      history[currentChat].push({text: repl[Math.floor(Math.random()*repl.length)], me:false});
+      renderMessages();
+    }, 600 + Math.random()*600);
+  }
+}
+
+function createChat(type){
+  const name = prompt(type==="group" ? "Название группы" : "Название канала");
+  if(!name) return;
+  const newChat = {name, type, replies:["Принято","Ок","Интересно"]};
+  chats.push(newChat);
+  // initial mini-history
+  const mini = [];
+  if(type === "channel"){
+    mini.push({text: "Канал создан: " + name, me:false});
+    mini.push({text: newChat.replies[0], me:false});
+  } else {
+    for(let i=0;i<3;i++){
+      mini.push({text: newChat.replies[Math.floor(Math.random()*newChat.replies.length)], me: i%2===0});
+    }
+  }
+  history.push(mini);
+  switchChat(chats.length - 1);
+}
+
+/* theme */
+function toggleTheme(){
+  document.body.classList.toggle("light");
+}
+
+/* small helpers */
+function focusSearch(){ alert("Поиск пока условный — скоро будет реальный ☺️"); }
+
+/* registration */
+function register(){
+  const name = (document.getElementById("usernameInput").value || "Аноним").trim();
+  username = name || "Аноним";
+  document.getElementById("registerModal").style.display = "none";
+  document.getElementById("appRoot").style.display = "flex";
+  document.getElementById("currentUser").textContent = username;
+  renderChats();
+  renderHeader();
+  renderMessages();
+}
+
+/* keyboard shortcut: Ctrl/Cmd+K to focus input */
+document.addEventListener("keydown", (e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); document.getElementById("input").focus(); }
+});
+
+/* initialize: show register modal */
+document.getElementById("registerModal").style.display = "flex";
+
+/* Expose some functions to global for buttons */
+window.createChat = createChat;
+window.toggleTheme = toggleTheme;
+window.register = register;
+window.send = send;
+window.switchChat = switchChat;
+window.focusSearch = focusSearch;
+</script>
+</body>
+</html>
+
+
+
